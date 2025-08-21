@@ -1,7 +1,7 @@
 /*
 * Program to read the electrical meter using a light sensor
 * This is the data acquisition part running on an Arduino Nano.
-* It detects light pulses
+* It detects light pulses on a connected photo transistor
 * and communicates with a master computer (Raspberry Pi)
 * over USB serial.
 
@@ -24,7 +24,14 @@
 
 #include <avr/eeprom.h>
 
-const int pulsesToSkip = 49; // Skip that many pulses before handling another one
+// Skip that many pulses before handling another one.
+// This is here to "divide down" high pulse rates into a more managable region.
+// The value of "49", set here by default, means that 49 pulses are skipped
+// and then the 50's pulse is actually handled. This effectively divides the
+// meter constant by 50 meaning that for a meter with 5000 pulses per kWh we
+// end with a more manageable 100 pulses per kWh.
+// To disable this feature and handle every pulse, set this to zero.
+const int pulsesToSkip = 49;
 
 const int analogInPin = A7;  // Analog input pin that the photo transistor is attached to
 const int irOutPin = 2; // Digital output pin that the IR-LED is attached to
