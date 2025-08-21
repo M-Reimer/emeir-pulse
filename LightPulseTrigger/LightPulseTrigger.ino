@@ -1,10 +1,11 @@
 /*
-* Program to read the electrical meter using a reflective light sensor
+* Program to read the electrical meter using a light sensor
 * This is the data acquisition part running on an Arduino Nano.
-* It controls the infrared light barrier, detects trigger
+* It detects light pulses
 * and communicates with a master computer (Raspberry Pi)
 * over USB serial.
 
+* Copyright 2025 Manuel Reimer
 * Copyright 2015 Martin Kompf
 *
 * This program is free software: you can redistribute it and/or modify
@@ -23,12 +24,11 @@
 
 #include <avr/eeprom.h>
 
+const int pulsesToSkip = 49; // Skip that many pulses before handling another one
+
 const int analogInPin = A7;  // Analog input pin that the photo transistor is attached to
 const int irOutPin = 2; // Digital output pin that the IR-LED is attached to
 const int ledOutPin = 12; // Signal LED output pin
-
-int sensorValueOff = 0;  // value read from the photo transistor when ir LED is off
-int sensorValueOn = 0;  // value read from the photo transistor when ir LED is on
 
 // command line
 #define MAX_CMD_LEN 80
@@ -50,6 +50,7 @@ char dataOutput = 'T';
 int triggerLevelLow;
 int triggerLevelHigh;
 boolean triggerState = false;
+int counter = 0;
 
 // Address of trigger levels in EEPROM
 uint16_t triggerLevelLowAddr = 0;
@@ -99,17 +100,43 @@ void readTriggerLevels() {
  * Detect and print a trigger event
  */
 void detectTrigger(int val) {
+  // Detect next state currently visible on sensor
   boolean nextState = triggerState;
   if (val > triggerLevelHigh) {
     nextState = true;
   } else if (val < triggerLevelLow) {
     nextState = false;
   }
+
+  // If next state is not our current trigger state
   if (nextState != triggerState) {
+    // Apply next state as our trigger state
     triggerState = nextState;
-    Serial.println(triggerState? 1 : 0);
-    // control internal LED
-    digitalWrite(ledOutPin, triggerState);
+
+    // Rising edge triggered (LED on power meter turned on)
+    if (triggerState) {
+      // Count up pulse counter on rising edge
+      counter++;
+
+      // All pulses skipped
+      if (counter > pulsesToSkip) {
+        // Report rising edge (inverted to match analog meter)
+        Serial.println(0);
+        digitalWrite(ledOutPin, HIGH);
+      }
+    }
+    // Falling edge triggered (LED on power meter turned off)
+    else {
+      // All pulses skipped
+      if (counter > pulsesToSkip) {
+        // Report falling edge (inverted to match analog meter)
+        Serial.println(1);
+        digitalWrite(ledOutPin, LOW);
+
+        // Reset pulse counter on falling edge
+        counter = 0;
+      }
+    }
   }
 }
 
@@ -169,11 +196,15 @@ void doCommand() {
 void setup() {
   // initialize serial communications at 9600 bps:
   Serial.begin(9600);
+  //Serial.begin(115200);
   // initialize the digital pins as an output.
   pinMode(irOutPin, OUTPUT);
   pinMode(ledOutPin, OUTPUT);
   // read config from EEPROM
   readTriggerLevels();
+
+  // Pull IR out pin low (unused here as we don't drive an output LED)
+  digitalWrite(irOutPin, LOW);
 }
 
 /**
@@ -193,28 +224,18 @@ void loop() {
   }
   if (mode == 'D') {
     // perform measurement
-    // turn IR LED off
-    digitalWrite(irOutPin, LOW);
-    // wait 10 milliseconds
-    delay(10);
     // read the analog in value:
-    sensorValueOff = analogRead(analogInPin);           
-    // turn IR LED on
-    digitalWrite(irOutPin, HIGH);
-    delay(10);
-    // read the analog in value:
-    sensorValueOn = analogRead(analogInPin);           
+    int sensorValue = analogRead(analogInPin);
     
     switch (dataOutput) {
       case 'R':
         // print the raw data to the serial monitor         
-        Serial.println(sensorValueOn - sensorValueOff);
+        Serial.println(sensorValue);
         break;
       case 'T':
         // detect and output trigger
-        detectTrigger(sensorValueOn - sensorValueOff);
+        detectTrigger(sensorValue);
         break;
     }
   }
-  delay(10);                     
 }
