@@ -1,12 +1,14 @@
-# emeir
-Monitor the counter of an electricity meter with Arduino and infrared light sensor.
+# emeir-pulse
+Monitor the counter of an electricity meter with Arduino and light sensor.
+
+This repository is a fork of the [emeir](https://github.com/skaringa/emeir) project by Martin Kompf. This fork is alternative firmware, which runs on the same hardware but with a "simplified" sensor, to use the "emeir" hardware on modern digital electricity meters which send light pulses with an (infrared) LED.
 
 ![Electricity meter with infrared light barrier](https://www.kompf.de/tech/images/countemeir.jpg)
 
 
 The software consists of two parts:
 
-* Data acquisition part running on an Arduino Nano. It controls the infrared light barrier, detects trigger levels and communicates with a master computer over USB serial.
+* Data acquisition part running on an Arduino Nano. It controls a light sensor, detects trigger levels, skips pulses if so desired and communicates with a master computer over USB serial.
 * Data recording part running on a the master computer (Raspberry Pi). It retrieves the data from the Arduino over USB serial and stores counter and consumption values into a round robin database.
 
 There is a blog in german language that explains use case and function: [Infrarot Lichtschranke mit Arduino zum Auslesen des Stromzählers](https://www.kompf.de/tech/emeir.html).
@@ -23,4 +25,4 @@ Arduino is in trigger mode upon start - Send __C__ to enter command mode
 
 ## Schematics
 
-![Schematics](https://www.kompf.de/tech/images/reflsensor.png)
+![Schematics](https://raw.githubusercontent.com/wiki/M-Reimer/emeir-pulse/images/pulsesensor.png)
