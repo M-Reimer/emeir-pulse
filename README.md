@@ -3,7 +3,7 @@ Monitor the counter of an electricity meter with Arduino and light sensor.
 
 This repository is a fork of the [emeir](https://github.com/skaringa/emeir) project by Martin Kompf. This fork is alternative firmware, which runs on the same hardware but with a "simplified" sensor, to use the "emeir" hardware on modern digital electricity meters which send light pulses with an (infrared) LED.
 
-![Electricity meter with infrared light barrier](https://www.kompf.de/tech/images/countemeir.jpg)
+![Electricity meter with light sensor](https://raw.githubusercontent.com/wiki/M-Reimer/emeir-pulse/images/digital_meter_sensor.jpg)
 
 
 The software consists of two parts:
